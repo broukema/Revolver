@@ -37,6 +37,11 @@ provided for best performance. See parameters/params.py for information on how t
    - astropy 1.0.6
    - cython 0.25.2
 
+In Debian GNU/Linux:
+   - ```apt-get install python-numpy python-astropy python-scipy python-healpy cython python-fftw```
+   - or ```aptitude install python-numpy python-astropy python-scipy python-healpy cython python-fftw```
+should be enough to install these libraries for you, as superuser (e.g. sudo).
+
 Some earlier versions of numpy and scipy will fail due to changes in functionality of some methods (numpy.unique 
 and scipy.spatial.cKDTree). The code has only been tested with the stated versions of the other packages: other versions
 may or may not work!

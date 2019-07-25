@@ -47,13 +47,16 @@ voz1b1_mpi: voz1b1.o readfiles.o vozutil.o voz.h
 	$(MPICC) $(MPICFLAGS) -o voz1b1_mpi voz1b1_mpi.o voz1b1.o readfiles.o vozutil.o -L. $(QLIB) $(MLIBS)
 
 all: $(EXES)
-	mv $(EXES) ../bin
+	mkdir -p ../bin
+	mv -v $(EXES) ../bin
 
 all_nompi: $(EXES_NOMPI)
-	mv $(EXES_NOMPI) ../bin
+	mkdir -p ../bin
+	mv -v $(EXES_NOMPI) ../bin
 
 install: $(EXES_NOMPI)
-	mv $(EXES_NOMPI) ../bin
+	mkdir -p ../bin
+	mv -v $(EXES_NOMPI) ../bin
 
 .c.o:
 	$(CC) -c -o $@ $(CFLAGS) $(QINC) $*.c
