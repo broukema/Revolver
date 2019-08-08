@@ -3,14 +3,14 @@
 # distance units in this code are calculated in Mpc/h by default
 
 # ======= runtime options ======== #
-verbose = False  # True for more informative output statements
+verbose = True  # True for more informative output statements
 debug = False    # True for output checks during reconstruction
-nthreads = 1    # set to the number of CPUs you have
+nthreads = 4    # set to the number of CPUs you have
 # ================================ #
 
 # ========= file handling options ========= #
-handle = ''         # string; used to identify the sample and set filenames
-output_folder = ''  # /path/to/folder/ where output should be placed
+handle = 'test'         # string; used to identify the sample and set filenames
+output_folder = 'outputs/'  # /path/to/folder/ where output should be placed
 # ========================================= #
 
 # ========== cosmology ============ #
@@ -18,7 +18,7 @@ omega_m = 0.308  # used for reconstruction and to convert redshifts to distances
 # ================================= #
 
 # ======= reconstruction options ========== #
-do_recon = True     # if False, no reconstruction is performed and other recon options are ignored
+do_recon = False     # if False, no reconstruction is performed and other recon options are ignored
 nbins = 256     # the number of grid cells per side of the box
 padding = 200.  # for survey data, the extra 'padding' for the cubic box, in Mpc/h
 smooth = 10.    # smoothing scale in Mpc/h
@@ -28,10 +28,10 @@ niter = 3       # number of iterations in the FFT reconstruction method, 3 is su
 # ========================================= #
 
 # ======= input tracer data options =========== #
-tracer_file = ''    # /path/to/file with input data
-is_box = False      # True if tracers cover a cubic simulation box with periodic boundaries; False for survey data
-box_length = 1500.  # if is_box, the box side length in Mpc/h; else ignored
-boss_like = True    # True if the input data file is in FITS format with same data fields as BOSS data
+tracer_file = 'inputfile.ascii'    # /path/to/file with input data
+is_box = True      # True if tracers cover a cubic simulation box with periodic boundaries; False for survey data
+box_length = 1.0  # if is_box, the box side length in Mpc/h; else ignored
+boss_like = False    # True if the input data file is in FITS format with same data fields as BOSS data
 special_patchy = False  # set True if input array is in the special PATCHY format provided by Hector
 # if not boss_like or special_patchy, data file must contain array data in ASCII or NPY format
 posn_cols = [0, 1, 2]  # columns of tracer input array containing 3D position information
@@ -65,7 +65,7 @@ randoms_file = ''   # /path/to/file containing randoms data: must be formatted s
 # =========================== #
 
 # ========== void-finding choices ============= #
-run_voxelvoids = True  # watershed void-finding based on particle-mesh density field interpolation in voxels
+run_voxelvoids = False  # watershed void-finding based on particle-mesh density field interpolation in voxels
 run_zobov = True   # watershed void-finding (using ZOBOV) based on Voronoi tessellation
 # note that these two options are not mutually exclusive - 2 sets of voids can be produced if desired
 
