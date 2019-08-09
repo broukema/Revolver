@@ -687,13 +687,15 @@ class ZobovVoids:
             log = open(logfile, "w")
             cmd = ['mpirun', binpath + 'voz1b1_mpi', self.posn_file, str(zobov_buffer), str(self.box_length),
                    str(zobov_box_div), self.handle]
-            subprocess.call(cmd, stdout=log, stderr=log)
+            #subprocess.call(cmd, stdout=log, stderr=log)
+            subprocess.call(cmd, stderr=log)
             log.close()
 
             # ---Step 2: tie the sub-boxes together using voztie--- #
             log = open(logfile, "a")
             cmd = [binpath + "voztie", str(zobov_box_div), self.handle]
-            subprocess.call(cmd, stdout=log, stderr=log)
+            #subprocess.call(cmd, stdout=log, stderr=log)
+            subprocess.call(cmd, stderr=log)
             log.close()
 
             # ---Step 3: check the tessellation was successful--- #
@@ -802,8 +804,8 @@ class ZobovVoids:
             log.close()
 
         # ---clean up: remove unnecessary files--- #
-        for fileName in glob.glob("./part." + self.handle + ".*"):
-            os.unlink(fileName)
+        #for fileName in glob.glob("./part." + self.handle + ".*"):
+        #    os.unlink(fileName)
 
         # ---clean up: move all other files to appropriate directory--- #
         raw_dir = self.output_folder + "rawZOBOV/"
@@ -1051,13 +1053,25 @@ class ZobovVoids:
         v_id = np.asarray(list_array[:, 0], dtype=int)
         corepart = np.asarray(list_array[:, 1], dtype=int)
 
+        debug = True
+
+        if debug:
+            print("adjacency_file = ",adjacency_file)
+            sys.stdout.flush()
+
         # read and assign adjacencies from ZOBOV output
         with open(adjacency_file, 'r') as AdjFile:
             npfromadj = np.fromfile(AdjFile, dtype=np.int32, count=1)
+            if debug:
+                print("npfromadj = ",npfromadj)
+                sys.stdout.flush()
             if not npfromadj == self.num_tracers:
                 sys.exit("npart = %d from adjacency file does not match num_tracers = %d!"
                          % (npfromadj, self.num_tracers))
             partadjs = [[] for i in range(npfromadj)]  # list of lists to record adjacencies - is there a better way?
+            if debug:
+                print("partadjs len = ",len(partadjs), len(partadjs[0]),len(partadjs[1]))
+                sys.stdout.flush()
             partadjcount = np.zeros(npfromadj, dtype=np.int32)  # counter to monitor adjacencies
             nadj = np.fromfile(AdjFile, dtype=np.int32, count=npfromadj)  # number of adjacencies for each particle
             # load up the adjacencies from ZOBOV output
@@ -1066,10 +1080,18 @@ class ZobovVoids:
                 if numtomatch > 0:
                     # particle numbers of adjacent particles
                     adjpartnumbers = np.fromfile(AdjFile, dtype=np.int32, count=numtomatch)
+                    if debug:
+                        print("numtomatch, len(adjpartnumbers) = ",numtomatch,len(adjpartnumbers))
+                        sys.stdout.flush()
                     # keep track of how many adjacencies had already been assigned
                     oldcount = partadjcount[i]
                     newcount = oldcount + len(adjpartnumbers)
                     partadjcount[i] = newcount
+                    if debug:
+                        print("counts = ",oldcount, newcount, i, partadjcount[i])
+                        sys.stdout.flush()
+                        print("adjpartnumbers = ",adjpartnumbers)
+                        sys.stdout.flush()
                     # and now assign new adjacencies
                     partadjs[i][oldcount:newcount] = adjpartnumbers
                     # now also assign the reverse adjacencies
