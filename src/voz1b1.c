@@ -1,4 +1,5 @@
 #include "voz.h"
+#include <stdbool.h>
 
 int delaunadj (coordT *points, int nvp, int nvpbuf, int nvpall, PARTADJ **adjs);
 int vorvol (coordT *deladjs, coordT *points, pointT *intpoints, int numpoints, realT *vol);
@@ -9,7 +10,7 @@ int posread_chunk(FILE *f, realT **p, realT fact, int np, int nread);
 
 
 void voz1b1(char *posfile, realT border, realT boxsize,
-	    int numdiv, int b[], char *suffix){
+            int numdiv, int b[], char *suffix){
 
   int exitcode;
   int i, j, np, np_current, np_tot;
@@ -22,7 +23,12 @@ void voz1b1(char *posfile, realT border, realT boxsize,
   PARTADJ *adjs;
   realT *vols;
   realT predict, xmin,xmax,ymin,ymax,zmin,zmax;
-  int *orig; 
+
+  /* "original" particle identifiers in relation to the checking of
+     buffers of adjacent volumes */
+  int *orig;  /* "original" particle ID */
+  bool *orig_exists; /* Has an original particle ID been set? */
+
   int isitinbuf;
   int n_overlap;
   int isitinmain, d, i_x, i_y, i_z;
@@ -57,17 +63,17 @@ void voz1b1(char *posfile, realT border, realT boxsize,
       /* In units of 0-1, the thickness of each subregion's buffer*/
   totwidth = width+2.*bf;
   totwidth2 = width2 + bf;
-  
+
   s = width/(realT)NGUARD;
   if ((bf*bf - 2.*s*s) < 0.) {
     printf("bf = %g, s = %g.\n",bf,s);
     printf("Not enough guard points for given border.\nIncrease guards to >= %g\n.",
-	   sqrt(2.)*width/bf);
+           sqrt(2.)*width/bf);
     exit(0);
   }
   g = (bf / 2.)*(1. + sqrt(1 - 2.*s*s/(bf*bf)));
   printf("s = %g, bf = %g, g = %g.\n",s,bf,g);
-  
+
   fflush(stdout);
 
   DL c[d] = ((realT)b[d]+0.5)*width;
@@ -84,51 +90,51 @@ void voz1b1(char *posfile, realT border, realT boxsize,
   while(np_tot < np){
     np_current = posread_chunk(pos, r, 1./boxsize, np, np_tot);
     for (i=0; i< np_current; i++) {
-      n_overlap = 0;      
+      n_overlap = 0;
       isitinbuf = 1;
       isitinmain = 1;
       DL {
-	    rtemp[d] = (realT)r[i][d] - (realT)c[d];
-	    if (rtemp[d] > 0.5) rtemp[d] --;
-	    if (rtemp[d] < -0.5) rtemp[d] ++;
-	    isitinbuf = isitinbuf && (fabs(rtemp[d]) < totwidth2);
-	    isitinmain = isitinmain && (fabs(rtemp[d]) <= width2);
+            rtemp[d] = (realT)r[i][d] - (realT)c[d];
+            if (rtemp[d] > 0.5) rtemp[d] --;
+            if (rtemp[d] < -0.5) rtemp[d] ++;
+            isitinbuf = isitinbuf && (fabs(rtemp[d]) < totwidth2);
+            isitinmain = isitinmain && (fabs(rtemp[d]) <= width2);
       }
       if (isitinmain){
-	    nvp++;
-	    nvpbuf++;
+            nvp++;
+            nvpbuf++;
       }
 
       if (isitinbuf && !isitinmain) {
-	    /* handle the pathological case, when buffer zones overlap */
-	    for( i_x = 0; i_x < 2; i_x++){
-	      rtemp_inner[0] = rtemp[0];
-	      if(i_x){
-	        if (rtemp_inner[0] > 0.0)  rtemp_inner[0] --;
-	        else rtemp_inner[0] ++;
-	      }
-	      if(fabs(rtemp_inner[0]) < totwidth2){
-	        for( i_y = 0; i_y < 2; i_y++){
-	          rtemp_inner[1] = rtemp[1];
-	          if(i_y){
-		        if (rtemp_inner[1] > 0.0)  rtemp_inner[1] --;
-		        else rtemp_inner[1] ++;
-	          }
-	          if(fabs(rtemp_inner[1]) < totwidth2){
-		        for( i_z = 0; i_z < 2; i_z++){
-		          rtemp_inner[2] = rtemp[2];
-		          if(i_z){
-		            if (rtemp_inner[2] > 0.0) rtemp_inner[2] --;
-		            else rtemp_inner[2] ++;
-		          }
-	              if(fabs(rtemp_inner[2]) < totwidth2){
-		            nvpbuf++;
-		          }
-		        }
-	          }
-	        }
-	      }
-	    }
+            /* handle the pathological case, when buffer zones overlap */
+            for( i_x = 0; i_x < 2; i_x++){
+              rtemp_inner[0] = rtemp[0];
+              if(i_x){
+                if (rtemp_inner[0] > 0.0)  rtemp_inner[0] --;
+                else rtemp_inner[0] ++;
+              }
+              if(fabs(rtemp_inner[0]) < totwidth2){
+                for( i_y = 0; i_y < 2; i_y++){
+                  rtemp_inner[1] = rtemp[1];
+                  if(i_y){
+                        if (rtemp_inner[1] > 0.0)  rtemp_inner[1] --;
+                        else rtemp_inner[1] ++;
+                  }
+                  if(fabs(rtemp_inner[1]) < totwidth2){
+                        for( i_z = 0; i_z < 2; i_z++){
+                          rtemp_inner[2] = rtemp[2];
+                          if(i_z){
+                            if (rtemp_inner[2] > 0.0) rtemp_inner[2] --;
+                            else rtemp_inner[2] ++;
+                          }
+                      if(fabs(rtemp_inner[2]) < totwidth2){
+                            nvpbuf++;
+                          }
+                        }
+                  }
+                }
+              }
+            }
       }
     }
     np_tot += np_current;
@@ -136,11 +142,12 @@ void voz1b1(char *posfile, realT border, realT boxsize,
 
   printf("nvp = %d, after count\n",nvp);
   printf("nvpbuf = %d, after count\n",nvpbuf);
-  
+
   nvpbuf += 6*(NGUARD+1)*(NGUARD+1); /* number of guard points */
 
   parts = (coordT *)malloc(3*nvpbuf*sizeof(coordT));
   orig = (int *)malloc(nvpbuf*sizeof(int));
+  orig_exists = (bool *)malloc(nvpbuf*sizeof(bool));
 
   if (parts == NULL) {
     printf("Unable to allocate parts\n");
@@ -150,9 +157,18 @@ void voz1b1(char *posfile, realT border, realT boxsize,
     printf("Unable to allocate orig\n");
     fflush(stdout);
   }
+  if (NULL == orig_exists) {
+    printf("Unable to allocate orig_exists\n");
+    fflush(stdout);
+  }
 
   nvp = 0; nvpall = 0; /* nvp = number of particles without buffer */
   xmin = BF; xmax = -BF; ymin = BF; ymax = -BF; zmin = BF; zmax = -BF;
+
+  /* initialise non-existence of orig[.] indices */
+  for(i=0; i<nvpbuf; i++){
+    orig_exists[i] = false;
+  };
 
   np_tot = 0;
   while(np_tot < np){
@@ -160,23 +176,24 @@ void voz1b1(char *posfile, realT border, realT boxsize,
     for (i=0; i< np_current; i++) {
       isitinmain = 1;
       DL {
-	    rtemp[d] = r[i][d] - c[d];
-	    if (rtemp[d] > 0.5) rtemp[d] --;
-	    if (rtemp[d] < -0.5) rtemp[d] ++;
-	    isitinmain = isitinmain && (fabs(rtemp[d]) <= width2);
+            rtemp[d] = r[i][d] - c[d];
+            if (rtemp[d] > 0.5) rtemp[d] --;
+            if (rtemp[d] < -0.5) rtemp[d] ++;
+            isitinmain = isitinmain && (fabs(rtemp[d]) <= width2);
       }
       if (isitinmain) {
-	    parts[3*nvp] = rtemp[0];
-	    parts[3*nvp+1] = rtemp[1];
-	    parts[3*nvp+2] = rtemp[2];
-	    orig[nvp] = np_tot + i;
-	    nvp++;
-	    if (rtemp[0] < xmin) xmin = rtemp[0];
-	    if (rtemp[0] > xmax) xmax = rtemp[0];
-	    if (rtemp[1] < ymin) ymin = rtemp[1];
-	    if (rtemp[1] > ymax) ymax = rtemp[1];
-	    if (rtemp[2] < zmin) zmin = rtemp[2];
-	    if (rtemp[2] > zmax) zmax = rtemp[2];
+            parts[3*nvp] = rtemp[0];
+            parts[3*nvp+1] = rtemp[1];
+            parts[3*nvp+2] = rtemp[2];
+            orig[nvp] = np_tot + i;
+            orig_exists[nvp] = true;
+            nvp++;
+            if (rtemp[0] < xmin) xmin = rtemp[0];
+            if (rtemp[0] > xmax) xmax = rtemp[0];
+            if (rtemp[1] < ymin) ymin = rtemp[1];
+            if (rtemp[1] > ymax) ymax = rtemp[1];
+            if (rtemp[2] < zmin) zmin = rtemp[2];
+            if (rtemp[2] > zmax) zmax = rtemp[2];
       }
     }
     np_tot += np_current;
@@ -192,52 +209,53 @@ void voz1b1(char *posfile, realT border, realT boxsize,
     for (i=0; i< np_current; i++) {
       isitinbuf = 1;
       DL {
-	    rtemp[d] = r[i][d] - c[d];
-	    if (rtemp[d] > 0.5) rtemp[d] --;
-	    if (rtemp[d] < -0.5) rtemp[d] ++;
-	    isitinbuf = isitinbuf && (fabs(rtemp[d])<totwidth2);
+            rtemp[d] = r[i][d] - c[d];
+            if (rtemp[d] > 0.5) rtemp[d] --;
+            if (rtemp[d] < -0.5) rtemp[d] ++;
+            isitinbuf = isitinbuf && (fabs(rtemp[d])<totwidth2);
       }
       if ((isitinbuf > 0) && ((fabs(rtemp[0])>width2)||(fabs(rtemp[1])>width2)||(fabs(rtemp[2])>width2))) {
-	    /* handle the pathological case, when buffer zones overlap */
-	    for( i_x = 0; i_x < 2; i_x++){
-	      rtemp_inner[0] = rtemp[0];
-	      if(i_x){
-	        if (rtemp_inner[0] > 0.0) rtemp_inner[0] --;
-	        else rtemp_inner[0] ++;
-	      }
-	      if(fabs(rtemp_inner[0]) < totwidth2){
-	        for( i_y = 0; i_y < 2; i_y++){
-	          rtemp_inner[1] = rtemp[1];
-	          if(i_y){
-		        if (rtemp_inner[1] > 0.0) rtemp_inner[1] --;
-		        else rtemp_inner[1] ++;
-	          }
-	          if(fabs(rtemp_inner[1]) < totwidth2){
-		        for( i_z = 0; i_z < 2; i_z++){
-		          rtemp_inner[2] = rtemp[2];
-		          if(i_z){
-		            if (rtemp_inner[2] > 0.0) rtemp_inner[2] --;
-		            else rtemp_inner[2] ++;
-		          }
-	              if(fabs(rtemp_inner[2]) < totwidth2){
-		            parts[3*nvpbuf] = rtemp_inner[0];
-		            parts[3*nvpbuf+1] = rtemp_inner[1];
-		            parts[3*nvpbuf+2] = rtemp_inner[2];
-		            orig[nvpbuf] = np_tot + i;
-		            nvpbuf++;
-		            if (rtemp_inner[0] < xmin) xmin = rtemp_inner[0];
-		            if (rtemp_inner[0] > xmax) xmax = rtemp_inner[0];
-		            if (rtemp_inner[1] < ymin) ymin = rtemp_inner[1];
-		            if (rtemp_inner[1] > ymax) ymax = rtemp_inner[1];
-		            if (rtemp_inner[2] < zmin) zmin = rtemp_inner[2];
-		            if (rtemp_inner[2] > zmax) zmax = rtemp_inner[2];
-	              }
-		        }
-	          }
-	        }
-	      }
-	    }
-      }      
+            /* handle the pathological case, when buffer zones overlap */
+            for( i_x = 0; i_x < 2; i_x++){
+              rtemp_inner[0] = rtemp[0];
+              if(i_x){
+                if (rtemp_inner[0] > 0.0) rtemp_inner[0] --;
+                else rtemp_inner[0] ++;
+              }
+              if(fabs(rtemp_inner[0]) < totwidth2){
+                for( i_y = 0; i_y < 2; i_y++){
+                  rtemp_inner[1] = rtemp[1];
+                  if(i_y){
+                        if (rtemp_inner[1] > 0.0) rtemp_inner[1] --;
+                        else rtemp_inner[1] ++;
+                  }
+                  if(fabs(rtemp_inner[1]) < totwidth2){
+                        for( i_z = 0; i_z < 2; i_z++){
+                          rtemp_inner[2] = rtemp[2];
+                          if(i_z){
+                            if (rtemp_inner[2] > 0.0) rtemp_inner[2] --;
+                            else rtemp_inner[2] ++;
+                          }
+                      if(fabs(rtemp_inner[2]) < totwidth2){
+                            parts[3*nvpbuf] = rtemp_inner[0];
+                            parts[3*nvpbuf+1] = rtemp_inner[1];
+                            parts[3*nvpbuf+2] = rtemp_inner[2];
+                            orig[nvpbuf] = np_tot + i;
+                            orig_exists[nvpbuf] = true;
+                            nvpbuf++;
+                            if (rtemp_inner[0] < xmin) xmin = rtemp_inner[0];
+                            if (rtemp_inner[0] > xmax) xmax = rtemp_inner[0];
+                            if (rtemp_inner[1] < ymin) ymin = rtemp_inner[1];
+                            if (rtemp_inner[1] > ymax) ymax = rtemp_inner[1];
+                            if (rtemp_inner[2] < zmin) zmin = rtemp_inner[2];
+                            if (rtemp_inner[2] > zmax) zmax = rtemp_inner[2];
+                      }
+                        }
+                  }
+                }
+              }
+            }
+      }
     }
     np_tot += np_current;
   }
@@ -253,7 +271,7 @@ void voz1b1(char *posfile, realT border, realT boxsize,
   free(r);
   fclose(pos);
 
-  
+
   /* Add guard points */
   for (i=0; i<NGUARD+1; i++) {
     for (j=0; j<NGUARD+1; j++) {
@@ -275,7 +293,7 @@ void voz1b1(char *posfile, realT border, realT boxsize,
       parts[3*nvpall+1] = -width2 - g;
       parts[3*nvpall+2] = -width2 + (realT)j * s;
       nvpall++;
-      
+
       parts[3*nvpall]   = -width2 + (realT)i * s;
       parts[3*nvpall+1] = width2 + g;
       parts[3*nvpall+2] = -width2 + (realT)j * s;
@@ -288,7 +306,7 @@ void voz1b1(char *posfile, realT border, realT boxsize,
       parts[3*nvpall+1] = -width2 + (realT)i * s;
       parts[3*nvpall+2] = -width2 + (realT)j * s;
       nvpall++;
-      
+
       parts[3*nvpall]   = width2 + g;
       parts[3*nvpall+1] = -width2 + (realT)i * s;
       parts[3*nvpall+2] = -width2 + (realT)j * s;
@@ -304,7 +322,7 @@ void voz1b1(char *posfile, realT border, realT boxsize,
     if (parts[3*i+2] < zmin) zmin = parts[3*i+2];
     if (parts[3*i+2] > zmax) zmax = parts[3*i+2];
   }
-  
+
   printf("Added guard points to total %d points (should be %d)\n", nvpall, nvpbuf + 6*(NGUARD+1)*(NGUARD+1));
   printf("x: %g,%g; y: %g,%g; z:%g,%g\n",xmin,xmax,ymin,ymax,zmin,zmax);
 
@@ -314,7 +332,7 @@ void voz1b1(char *posfile, realT border, realT boxsize,
     printf("Unable to allocate adjs\n");
     exit(0);
   }
-  
+
   /* Do tesselation*/
   printf("File read.  Tessellating ...\n"); fflush(stdout);
   exitcode = delaunadj(parts, nvp, nvpbuf, nvpall, &adjs);
@@ -323,21 +341,21 @@ void voz1b1(char *posfile, realT border, realT boxsize,
      printf("Error while tessellating. Stopping here."); fflush(stdout);
      exit(1);
    }
-  
+
   /* Now calculate volumes*/
   printf("Now finding volumes ...\n"); fflush(stdout);
   vols = (realT *)malloc(nvp*sizeof(realT));
-  
+
   for (i=0; i<nvp; i++) { /* Just the original particles
-			     Assign adjacency coordinate array*/
+                             Assign adjacency coordinate array*/
     /* Volumes */
     for (j = 0; j < adjs[i].nadj; j++)
       DL {
-	    deladjs[3*j + d] = parts[3*adjs[i].adj[j]+d] - parts[3*i+d];
-	    if (deladjs[3*j+d] < -0.5) deladjs[3*j+d]++;
-	    if (deladjs[3*j+d] > 0.5) deladjs[3*j+d]--;
+            deladjs[3*j + d] = parts[3*adjs[i].adj[j]+d] - parts[3*i+d];
+            if (deladjs[3*j+d] < -0.5) deladjs[3*j+d]++;
+            if (deladjs[3*j+d] > 0.5) deladjs[3*j+d]--;
       }
-    
+
     exitcode = vorvol(deladjs, points, intpoints, adjs[i].nadj, &(vols[i]));
     vols[i] *= (realT)np;
   }
@@ -345,14 +363,24 @@ void voz1b1(char *posfile, realT border, realT boxsize,
   /* Get the adjacencies back to their original values */
   for (i=0; i<nvp; i++)
     for (j = 0; j < adjs[i].nadj; j++)
-      adjs[i].adj[j] = orig[adjs[i].adj[j]];
-  
+      if(orig_exists[adjs[i].adj[j]]){
+        adjs[i].adj[j] = orig[adjs[i].adj[j]];
+      }else{
+        printf("voz1b1: ERROR: original adjacencies are incomplete:");
+        printf(" i=%d  j=%d adjs[i].adj[j]=%d\n",
+               i, j, adjs[i].adj[j]);
+        printf("Possible solutions:\n");
+        printf("  decrease zobov_box_div = number of divisions;\n");
+        printf("  increase zobov_buffer = border size\n");
+        exit(1);
+      };
+
   totalvol = 0.;
   for (i=0;i<nvp; i++) {
     totalvol += (realT)vols[i];
   }
   printf("Average volume = %g\n",totalvol/(realT)nvp);
-  
+
   /* Now the output!
      First number of particles */
   sprintf(outfile,"part.%s.%02d.%02d.%02d",suffix,b[0],b[1],b[2]);
