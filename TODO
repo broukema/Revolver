@@ -1,0 +1,13 @@
+- TODO list for Revolver void-finding package
+
+* Check if a standard version of qhull (e.g. Debian GNU/Linux
+   stretch with 'aptitude install libqhull-dev libqhull7 qhull-bin'
+   has version 2015.2-2) allows the revolver packages to work
+   correctly. This would allow removal of qhull source code and
+   compilation and make revolver more modular.
+
+* Provide some small-scale input files and expected output files for regression
+   tests for checking that the package works correctly.
+
+
+   
